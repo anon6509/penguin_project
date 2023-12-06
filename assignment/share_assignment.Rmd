@@ -19,7 +19,7 @@ library("dplyr")
 library("janitor")
 
 #set working directory
-setwd("/Users/mac1/Documents/Year 3/MT3_penguin_analysis/assignment")
+setwd("assignment")
 ```
 ```{r}
 #making a data frame from the raw data 
