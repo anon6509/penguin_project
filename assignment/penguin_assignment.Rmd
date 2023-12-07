@@ -1,0 +1,193 @@
+---
+title: "Penguin Assignment"
+output:
+  html_document: default
+  pdf_document: default
+date: "2023-10-09"
+---
+#Version of R and packages used  
+R version 4.1.2 (2021-11-01)  
+ggplot2 3.4.4  
+ragg 1.2.6   
+palmerpenguins 0.1.1 
+dplyr 1.1.4  
+janitor 2.2.0  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(repos = c(CRAN = "https://cran.r-project.org/"))
+install.packages(c("ggplot2", "ragg", "palmerpenguins", "dplyr", "janitor"))
+library("ggplot2")
+library("ragg")
+library("palmerpenguins")
+library("dplyr")
+library("janitor")
+```
+
+## QUESTION 01: Data Visualisation for Science Communication
+Create a figure using the Palmer Penguin dataset that is correct but badly communicates the data
+
+### a) Provide your figure here:
+
+```{r exploratory figure, echo=FALSE, warning = FALSE}
+#setting working directory to where file is saved 
+setwd(".")
+
+#making a data frame from the raw data 
+write.csv(penguins_raw, "data_a/penguins_raw.csv")
+penguins_raw <- read.csv("data_a/penguins_raw.csv")
+
+#the source file includes a number of functions for cleaning the data (e.g. shortening the names and removing empty columns)- aim to make the data more computer readable and prepare the data for analysis 
+source("cleaning_a.r")
+penguins_clean <- penguins_raw %>%
+  select(-starts_with("Delta")) %>%
+  select(-Comments) %>%
+  clean_names() %>% 
+  clean_column_names() %>% 
+  shorten_species() %>% 
+  remove_empty_columns_rows %>% 
+  remove_NA()
+write.csv(penguins_clean, "data_a/penguins_clean.csv")
+
+#culmen length against culmen depth, seems to be a negative relationship, but when species added is positive
+ggplot(data = penguins_clean, aes(x = culmen_length_mm, y = culmen_depth_mm))+
+  geom_point(colour = "#F1704C", alpha = 0.6)+
+  labs(x = "Culmen Length", y = "Culmen Depth")+
+  theme_dark()+
+  geom_smooth(method='lm', se=F, colour = "#7BF14C")+
+  ylim(0,22)
+```
+
+### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).  
+The figure is difficult to read, making it harder for the reader to interpret the plot, such as the fact that there is a dark theme and the points aren't fully opaque. The colour scheme also isn't colour blind friendly which would make it harder to read for some (Dougherty & Ilyankou, 2021).   
+In addition, there are issues with the axes, such as the fact that the y axis starts at 0 which makes the pattern less clear as the points are compressed at the top of the plot. The y axis doesn't need to start at 0 as it isn't a bar chart (Dougherty & Ilyankou, 2021), so could instead by focused on 25-60mm. Also, the axes labels don't include units which should be mm so that readers have a clear sense of the scale of what has been measured.  
+Finally, the points haven't been coloured to denote the three species of penguin (adelie, gentoo and chinstrap) which the data has been collected on, which is clearly a major source of the variation as the different species are different sizes and have different feeding niches (Horst et al., 2020). This makes it seem that there is a negative correlation between culmen length and depth, disguising the real relationship that there is a positive correlation within each species, an example of simpson's paradox (Sprenger & Weinberger, 2021).   
+
+*References*  
+Dougherty, J., & Ilyankou, I. (2021). Hands-on data visualization (1st edition). O’Reilly Media, Inc.  
+Horst, A. Hill, A. Gorman, K. (2020). palmerpenguins: Palmer Archipelago (Antarctica) penguin data. R package version 0.1.0. doi: 10.5281/zenodo.3960218.  
+Sprenger, J., Weinberger, N. (2021). Simpson’s Paradox. The Stanford Encyclopedia of Philosoph, Edward N. Zalta (ed.).  
+
+
+------------------------------------------------------------------------
+
+## QUESTION 2: Data Pipeline
+
+### Introduction  
+The palmer penguins dataset is used in this project, which contains data on a number of features of penguins from 3 species (Adelie, Gentoo, and Chinstrap) on 3 islands in the Palmer Archipelago in Antartica. The dataset is in a raw form, with column names which aren't very useful for being processed by a computer and a number of missing data points. This means that the data first has to be 'cleaned' using a number of functions before it can be used for analysis. After this, an exploratory plot can be made which suggests a relationship/correlation that could be further investigated with statistical testing.
+
+```{r Data Exploration}
+#the source file includes a number of functions for cleaning the data (e.g. shortening the names and removing empty columns)- aim to make the data more computer readable and prepare the data for analysis 
+source("cleaning_a.r")
+penguins_clean <- penguins_raw %>%
+  select(-starts_with("Delta")) %>%
+  select(-Comments) %>%
+  clean_names() %>% 
+  clean_column_names() %>% 
+  shorten_species() %>% 
+  remove_empty_columns_rows %>% 
+  remove_NA()
+write.csv(penguins_clean, "data_a/penguins_clean.csv")
+
+#subsetting the clean data to just include adelies 
+adelie_only <- filter_by_species(penguins_clean, "Adelie")
+
+#creating an exploratory plot from the adelie_only data- a scatter plot of culmen length against culmen depth 
+exploratory_scatter <- ggplot(data = adelie_only, aes(x = culmen_length_mm, y = culmen_depth_mm))+
+  geom_point(colour = "#86D8FD", size = 2)+
+  labs(x = "Culmen Length (mm)", y = "Culmen Depth (mm)")+
+  theme_bw()+
+  ggtitle("A scatter plot of the culmen length against \nculmen depth of Adelie penguins")
+exploratory_scatter
+
+#saving the figure as png file into the figures_a folder
+agg_png("figures_a/exploratory_scatter.png", 
+        width = 15, height = 15, units = "cm", res = 600, scaling = 1.4)
+exploratory_scatter
+dev.off()
+```
+The exploratory scatter plot shows the relationship between the culmen length and depth of Adelie penguins. Culmen refers to the upper ridge of a bird's bill. The plot suggests that there is a positive correlation between culmen length and depth, but the strength and significance of this correlation will be explored further in this investigation. 
+
+### Hypothesis. 
+Alternative hypothesis (HA): There is a significant positive correlation between culmen length and depth in Adelie penguins (r>0)  
+Null hypothesis (H0): there is no significant correlation between culmen length and depth in Adelie penguins (r= 0). 
+
+### Statistical Methods  
+To test for the strength of the correlation between Adelie culmen length and depth, a correlation coefficient can be calculated. Correlation coefficient is a measure of the strength and direction of a correlation, with -1 being a strong negative correlation, 0 being no correlation, and 1 being a strong positive correlation. The function cor.test() can be used to do this in r, as it calculates the correlation coefficient, and the p-value associated with it to understand the significance of the result. The significance level of 0.05 will be used here, so if the p-value is smaller than this then the null hypothesis can be rejected and it can be concluded that there is a correlation significantly different from 0 between the variables.  
+
+```{r Statistics}
+#correlation coefficient (Pearson's product-moment correlation)
+cor.test(adelie_only$culmen_length_mm, adelie_only$culmen_depth_mm) 
+#r = 0.3858, p = 1.515e-06 (<0.05 so significantly different from 0 at this level, there is a significant positive correlation)
+#95% CI, 0.2383002, 0.5159261
+
+```
+
+### Results & Discussion
+The results suggest that there is a significant positive correlation between culmen length and depth in Adelie penguins. This is because the correlation coefficient (r) was calculated to be 0.3858, which indicates that there is a positive correlation, though it isn't a particularly strong relationship. The p value was calculated to be 1.515e-06, which is smaller than the significance level of 0.05, meaning that the correlation coefficient is significantly different from 0, and that the null hypothesis can be rejected.   
+```{r Plotting Results}
+#results plot- scatter plot of culmen length against culmen depth for just Adelies- including a linear regression line and the results of the correlation coefficient test
+results_scatter <- ggplot(adelie_only, aes(x = culmen_length_mm, y = culmen_depth_mm))+
+  geom_point()+
+  geom_smooth(method = "lm", color = "#86D8FD")+
+  labs(x = "Culmen Length (mm)", y = "Culmen Depth (mm)")+
+  ggtitle("A scatter plot of Adelie culmen length and \ndepth with a linear regression   line")+
+  geom_text(x = 43.5, y = 20.55, label = "r = 0.3858, p = 1.515e-06", 
+            color = "blue", size = 2.7) 
+results_scatter
+
+#slope of the correlation- linear regression- the line that is being plotted on the figure
+# lm(culmen_depth_mm ~ culmen_length_mm, data = adelie_only)
+# y = 0.1767x + 11.4877
+
+#saving the plot as a png file
+agg_png("figures_a/results_scatter.png", 
+        width = 15, height = 15, units = "cm", res = 600, scaling = 1.4)
+results_scatter
+dev.off()
+```
+The results figure is a scatter plot of Adelie penguin culmen length against culmen depth, with a linear regression curve plotted to show the positive correlation between the variables, and the r and p values associated with that relationship as calculated above. 
+
+### Conclusion  
+In conclusion, there is a positive correlation between the variables of culmen length and depth for the Adelie penguins studied in the palmer penguins dataset. Though the r value is relatively small (0.3858), it is a significant result at significance level of 0.05 (p = 1.515e-06). Therefore there is a significant positive correlation between these variables, meaning that penguins with longer beaks have deeper beaks too. This is expected as because beaks of different sizes likely need to have a similar ratio of shape in order to maintain the same functions.   
+
+------------------------------------------------------------------------
+
+## QUESTION 3: Open Science
+
+### a) GitHub
+GitHub link: https://github.com/anon6509/penguin_project 
+
+### b) Share your repo with a partner, download, and try to run their data pipeline.
+Partner's GitHub link: https://github.com/bubblez4dolphinz/ReproduciblePenguinsV1
+
+### c) Reflect on your experience running their code. (300-500 words)
+
+*What elements of your partner's code helped you to understand their data pipeline?*  
+I thought that the code was very clear, with the annotations and explanations after the code helping with understanding it a lot. For instance, I thought that the explanations of what the anova results table shows really helps understanding of why that test has been used and what the outcome of the test is. From this the discussion section and conclusion which they come to are much easier to understand.  
+I also liked how the data pipeline is laid out, such as the setting up section at the beginning which helps understanding of that code at the beginning and then keeping the code chunks later less cluttered with repeated code.  
+
+*Did it run? Did you need to fix anything?*   
+Everything ran fine nothing, I don't think anything needed to be fixed.  
+
+*What suggestions would you make for improving their code to make it more understandable or reproducible, and why?*  
+They used a number of less commonly used packages for specific functions so they could explain what these are doing to make code more understandable. For instance, cowplot and gridextra aren't packages I have heard of before so it could be good to have an explanation of why they are being used.  
+They could have the cleaning code functions as separate functions rather than a single function so that the reader can understand the steps that are doing better and apply it to other scenarios.  
+They could explain tests such as the qq-plot that are being used in more detail so that the reader understands why they've been used here and what they show about the data. It would also allow a reader to more easily apply these tests to other scenarios.  
+
+*If you needed to alter your partner's figure using their code, do you think that would be easy or difficult, and why?*   
+It generally would be easy to alter my partner's code as it is generally very clear and laid out well. However, some functions within the figure code are from specific packages which I haven't heard of, so they could have more description as to what each line of the figure code is doing so can understand those lines in particular in order to edit it more easily.  
+
+
+### d) Reflect on your own code based on your experience with your partner's code and their review of yours. (300-500 words)   
+
+*What improvements did they suggest, and do you agree?*  
+One part of the code which they suggested some improvements for was cleaning the code. For one, they suggested that I used two functions to clean the code which did the same thing (clean_names() and clean_column_names() which was already done by the first function), bloating the code. I completely agree with this comment, as bloated code is more difficult to understand for a reader as it takes longer to read through it and understand all of the part. In addition, they suggested not removing all of the rows with any NAs removed data, as this was likely to remove data points unnecessarily which still included measurements of culmen length and depth, the variables I was interested in in this investigation. I also agree with this point, as this may have changed the patterns in the data and made it less reproducible as if it was repeated without removing all of the rows with NAs and instead just removing those with NAs in the variables of interest, then the results of the stats tests and the pattern on the figures may change.   
+Furthermore, they suggested using a renv project library or a for loop in order to just install the packages missing from the user's computer. This is important as there may be other code on the user's computer that relies on the older package version and also means that if packages get updated from that used in my project then it will still run with the versions I used. I agree with this as this would make my project more reproducible and not affect other work of another user. Similarly, they suggest added a version list of packages and Rstudio which I agree would improve reproducibility too so have added this to the beginning of the document.  
+Finally, they suggested adding comments about why I have used different packages which would be useful for a reader to understand their purpose for my project and how they could apply it elsewhere.   
+
+*What did you learn about writing code for other people?*  
+I learnt that annotations that are not just understandable to me but to others too is very useful as my partner's use of good annotations and explanations would have allowed me to edit their code much more easily. Not only would this help me if coming back to the code in the future but allows other readers to engage with my code and edit it as they want.  
+I also learnt that having concise code split into chunks is important for understanding, and that bloated code is best to avoid so that a reader doesn't have to read and understand so many lines of code.   
+Finally, I learnt that getting someone else to read your code to check for its readability and that it runs fine on someone elses computer is very important, as it can be difficult to have a sense for this after working on a project for a long time on your own computer.  
+
