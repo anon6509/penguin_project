@@ -1,11 +1,10 @@
-# A function to make sure the column names are cleaned up, 
-# eg lower case and snake case
+# A function to make sure the column names are cleaned- e.g. lower case
 clean_column_names <- function(penguins_data) {
   penguins_data %>%
     clean_names()
 }
 
-# A function to make sure the species names are shortened
+# A function to make species names shortened
 shorten_species <- function(penguins_data) {
   penguins_data %>%
     mutate(species = case_when(
@@ -15,17 +14,10 @@ shorten_species <- function(penguins_data) {
     ))
 }
 
-# A function to remove any empty columns or rows
+# A function to remove empty columns or rows
 remove_empty_columns_rows <- function(penguins_data) {
   penguins_data %>%
     remove_empty(c("rows", "cols"))
-}
-
-
-# A function to subset the data based on the list of column names
-subset_columns <- function(penguins_data, column_names) {
-  penguins_data %>%
-    select(all_of(column_names))
 }
 
 # A function to subset the penguins data set based on species
@@ -34,14 +26,8 @@ filter_by_species <- function(penguins_data, selected_species) {
     filter(species == selected_species)
 }
 
-# A function to filter the penguins data set based on island
-filter_by_island <- function(penguins_data, sected_island) {
-  penguins_data %>%
-    filter(island == selected_island)
-}
 
-
-# A function to remove rows which contain NA values
+# A function to remove rows containing NA values
 remove_NA <- function(penguins_data) {
   penguins_data %>%
     na.omit()
