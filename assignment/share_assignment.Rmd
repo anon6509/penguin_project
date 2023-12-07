@@ -9,7 +9,6 @@ output:
 The palmer penguins dataset is used in this project, which contains data on a number of features of penguins from 3 species (Adelie, Gentoo, and Chinstrap) on 3 islands in the Palmer Archipelago in Antartica. The dataset is in a raw form, with column names which aren't very useful for being processed by a computer and a number of missing data points. This means that the data first has to be 'cleaned' using a number of functions before it can be used for analysis. After this, an exploratory plot can be made which suggests a relationship/correlation that could be further investigated with statistical testing.
 
 ```{r, warning = FALSE, results = 'hide', message = FALSE}
-options(repos = c(CRAN = "https://cran.r-project.org/"))
 #installing the packages needed
 install.packages(c("ggplot2", "ragg", "palmerpenguins", "dplyr", "janitor"))
 library("ggplot2")
@@ -19,7 +18,7 @@ library("dplyr")
 library("janitor")
 
 #set working directory
-setwd("assignment")
+setwd(".")
 ```
 ```{r}
 #making a data frame from the raw data 
